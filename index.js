@@ -8,16 +8,14 @@ const multer = require("multer");
 const Admin = require("./models/Admin");
 const UploadMiddleware = multer({ dest: 'uploads/' })
 const jwt = require("jsonwebtoken");
-const secret = process.env.secret;
 mongoose.set('strictQuery', false)
 const app = express();
 require("dotenv").config();
-app.use(cors({ origin:"*", credentials: true , }))
+app.use(cors({ origin:"*", }))
 app.use(express.json());
 app.use(cookieparser())
 app.use('/uploads', express.static(__dirname + "/uploads"));
 mongoose.connect(process.env.Mongo_Url).then(() => console.log("connected to db")).catch(err => console.log(err))
-
 app.get("/", (req, res) => {
     res.send("hello lalith kumar!!")
 })
@@ -26,7 +24,7 @@ app.post("/card", UploadMiddleware.single('file'), async (req, res) => {
     console.log("token", token);
     try {
         if (token) {
-            jwt.verify(token, secret, {}, async (err, info) => {
+            jwt.verify(token, process.env.secret, {}, async (err, info) => {
                 if (err) throw err;
     
                 const { originalname, path } = req.file;
@@ -60,15 +58,18 @@ app.post("/card", UploadMiddleware.single('file'), async (req, res) => {
     }
 })
 
+
 app.get("/cart", async (req, res) => {
+    console.log("cart root is called");
     const CartData = await Cart.find();
     res.json(CartData);
-
+console.log(CartData)
 
 
 })
 
 app.post("/login", async (req, res) => {
+    console.log("login route is  called!!!")
 
     const { email, password } = req.body;
     try {
@@ -83,7 +84,7 @@ app.post("/login", async (req, res) => {
             const admindoc = await Admin.findOne({ adminemail: email })
             if (admindoc) {
                 if (admindoc.adminemail === email && admindoc.adminpassword === password) {
-                    jwt.sign({ email, password }, secret, {}, (err, token) => {
+                    jwt.sign({ email, password }, process.env.secret, {}, (err, token) => {
                         if (err) throw err;
                         res.status(200).cookie('token', token).json({
                             token: token,
@@ -109,12 +110,15 @@ app.post("/login", async (req, res) => {
     }
 })
 
-app.post("/deleteitem", async (req, res) => {
+
+
+app.post("/deleteitem", async(req, res) => {
+    console.log("deleted called");
     const { id, img, token } = req.body;
     console.log(token);
     try {
         if (token) {
-            jwt.verify(token, secret, {}, async (err, info) => {
+            jwt.verify(token, process.env.secret, {}, async (err, info) => {
                 if (err) throw err;
                 if (info) {
                     fs.unlink(__dirname + '/' + img, (err) => {
@@ -148,4 +152,4 @@ app.post("/deleteitem", async (req, res) => {
 
 
 
-app.listen(process.env.port||2000, () => console.log("connected to port 2000"))
+app.listen(2000, () => console.log("connected to port 2000"))
